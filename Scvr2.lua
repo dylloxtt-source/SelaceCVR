@@ -25,22 +25,51 @@ local OriginalLighting = { Ambient = Lighting.Ambient, GlobalShadows = Lighting.
 -----------------------------------------
 -- ФУНКЦИЯ ПРОВЕРКИ КЛЮЧА И HWID
 -----------------------------------------
+-----------------------------------------
+-- ФУНКЦИЯ ПРОВЕРКИ КЛЮЧА И HWID (ЧЕРЕЗ PASTEBIN/GITHUB)
+-----------------------------------------
 local function VerifyKeyWithServer(key)
-    local hwid = "UNKNOWN_HWID"
+    -- 1. Получаем HWID компьютера, на котором запущен скрипт
+    local my_hwid = ""
     if gethwid then
-        pcall(function() hwid = gethwid() end)
+        pcall(function() my_hwid = gethwid() end)
     else
-        pcall(function() hwid = game:GetService("RbxAnalyticsService"):GetClientId() end)
+        pcall(function() my_hwid = game:GetService("RbxAnalyticsService"):GetClientId() end)
     end
 
-    -- ВРЕМЕННЫЙ КЛЮЧ-ЗАГЛУШКА:
-    if key == "selace123" then
-        return true, "Success!"
+    -- 2. Ссылка на твой RAW Pastebin или GitHub
+    -- ВАЖНО: Вставь сюда RAW ссылку, а не обычную!
+    local database_url = "https://pastebin.com/raw/ТВОЯ_ССЫЛКА_ЗДЕСЬ" 
+    
+    local success, database_text = pcall(function()
+        return game:HttpGet(database_url)
+    end)
+
+    if not success then
+        return false, "Error checking database! Check your internet."
     end
 
-    return false, "Invalid or Expired Key!"
+    -- 3. Проверяем каждую строчку в твоей базе данных
+    -- Формат в базе должен быть: КЛЮЧ:HWID
+    for line in string.gmatch(database_text, "[^\r\n]+") do
+        local split = string.split(line, ":")
+        local db_key = split[1]
+        local db_hwid = split[2]
+
+        -- Если ключ из базы совпал с тем, что ввел игрок
+        if key == db_key then
+            -- Проверяем, совпадает ли железо
+            if my_hwid == db_hwid then
+                return true, "Success! Welcome."
+            else
+                return false, "Key is locked to another PC!"
+            end
+        end
+    end
+
+    -- Если цикл закончился и ключ не найден
+    return false, "Invalid Key!"
 end
-
 -----------------------------------------
 -- UI БИБЛИОТЕКА И АНИМАЦИИ
 -----------------------------------------
