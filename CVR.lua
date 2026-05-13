@@ -4,7 +4,7 @@ local CoreGui = game:GetService("CoreGui")
 local Lighting = game:GetService("Lighting")
 
 local player = Players.LocalPlayer
-local camera = workspace.CurrentCamera
+local camera = workspace.CurrentCamera or workspace:WaitForChild("Camera")
 
 -----------------------------------------
 -- НАСТРОЙКИ ЗНАЧЕНИЙ
@@ -39,8 +39,12 @@ function UIHub.new(titleText)
     self.ScreenGui = Instance.new("ScreenGui")
     self.ScreenGui.Name = "SelaceHub"
     self.ScreenGui.ResetOnSpawn = false
-    pcall(function() self.ScreenGui.Parent = CoreGui end)
-    if not self.ScreenGui.Parent then self.ScreenGui.Parent = player:WaitForChild("PlayerGui") end
+    
+    -- Безопасная загрузка в CoreGui
+    local success = pcall(function() self.ScreenGui.Parent = CoreGui end)
+    if not success then 
+        self.ScreenGui.Parent = player:WaitForChild("PlayerGui") 
+    end
     
     self.MainFrame = Instance.new("Frame")
     self.MainFrame.Size = UDim2.new(0, 420, 0, 480)
@@ -61,9 +65,16 @@ function UIHub.new(titleText)
     Title.BackgroundTransparency = 1
     Title.Text = titleText
     Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Title.Font = Enum.Font.LilitaOne -- Уникальный шрифт для заголовка
     Title.TextSize = 22
     Title.Parent = self.MainFrame
+    
+    -- Безопасная установка шрифта Lilita One (чтобы скрипт не крашился)
+    local fontSuccess = pcall(function()
+        Title.FontFace = Font.new("rbxasset://fonts/families/LilitaOne.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+    end)
+    if not fontSuccess then
+        Title.Font = Enum.Font.GothamBlack
+    end
     
     self.TabContainer = Instance.new("Frame")
     self.TabContainer.Size = UDim2.new(1, -20, 0, 35)
@@ -101,7 +112,7 @@ function UIHub:CreateTab(tabName)
     Page.Size = UDim2.new(1, 0, 1, 0)
     Page.BackgroundTransparency = 1
     Page.ScrollBarThickness = 3
-    Page.CanvasSize = UDim2.new(0, 0, 0, 0)
+    Page.CanvasSize = UDim2.new(0, 0, 5, 0) -- Запас для прокрутки
     Page.AutomaticCanvasSize = Enum.AutomaticSize.Y
     Page.Visible = false
     Page.Parent = self.PageContainer
@@ -221,7 +232,7 @@ Hub:AddInput(TabGameplay, "Сила прыжка", tostring(Settings.Jump.Power)
 end)
 Hub:AddDualButton(TabGameplay, 
     function() Settings.Jump.Enabled = true end, 
-    function() Settings.Jump.Enabled = false end -- Просто отключаем
+    function() Settings.Jump.Enabled = false end
 )
 
 Hub:AddInput(TabGameplay, "Скорость бега", tostring(Settings.Speed.Power), function(val)
@@ -230,7 +241,7 @@ Hub:AddInput(TabGameplay, "Скорость бега", tostring(Settings.Speed.P
 end)
 Hub:AddDualButton(TabGameplay, 
     function() Settings.Speed.Enabled = true end, 
-    function() Settings.Speed.Enabled = false end -- Просто отключаем
+    function() Settings.Speed.Enabled = false end
 )
 
 Hub:AddInput(TabGameplay, "Сила Тильта", tostring(Settings.Tilt.Power), function(val)
@@ -263,7 +274,7 @@ Hub:AddInput(TabVisuals, "FOV (Макс 200)", tostring(Settings.Visuals.FOV), f
     local num = tonumber(val)
     if num then 
         Settings.Visuals.FOV = math.clamp(num, 1, 200)
-        camera.FieldOfView = Settings.Visuals.FOV
+        if camera then camera.FieldOfView = Settings.Visuals.FOV end
     end
 end)
 
@@ -284,7 +295,7 @@ Hub:AddDualButton(TabVisuals,
 )
 
 -----------------------------------------
--- ЛОГИКА ИГРЫ (Синхронизация)
+-- ЛОГИКА ИГРЫ
 -----------------------------------------
 local function SetupCharacterHooks(character)
     local humanoid = character:WaitForChild("Humanoid", 5)
