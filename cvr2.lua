@@ -5,7 +5,6 @@ local Lighting = game:GetService("Lighting")
 local Workspace = game:GetService("Workspace")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local HttpService = game:GetService("HttpService")
 
 local player = Players.LocalPlayer
 local DiscordLink = "https://discord.gg/9eYR7ecMu"
@@ -25,51 +24,44 @@ local OriginalLighting = { Ambient = Lighting.Ambient, GlobalShadows = Lighting.
 -----------------------------------------
 -- ФУНКЦИЯ ПРОВЕРКИ КЛЮЧА И HWID
 -----------------------------------------
------------------------------------------
--- ФУНКЦИЯ ПРОВЕРКИ КЛЮЧА И HWID (ЧЕРЕЗ PASTEBIN/GITHUB)
------------------------------------------
 local function VerifyKeyWithServer(key)
-    -- 1. Получаем HWID компьютера, на котором запущен скрипт
-    local my_hwid = ""
+    local my_hwid = "UNKNOWN"
     if gethwid then
         pcall(function() my_hwid = gethwid() end)
     else
         pcall(function() my_hwid = game:GetService("RbxAnalyticsService"):GetClientId() end)
     end
 
-    -- 2. Ссылка на твой RAW Pastebin или GitHub
-    -- ВАЖНО: Вставь сюда RAW ссылку, а не обычную!
-    local database_url = "https://pastebin.com/raw/ТВОЯ_ССЫЛКА_ЗДЕСЬ" 
+    -- Ссылка на твой RAW Pastebin
+    local database_url = "https://pastebin.com/raw/2aVHcEnn" 
     
     local success, database_text = pcall(function()
         return game:HttpGet(database_url)
     end)
 
     if not success then
-        return false, "Error checking database! Check your internet."
+        return false, "Error checking DB! Check internet."
     end
 
-    -- 3. Проверяем каждую строчку в твоей базе данных
-    -- Формат в базе должен быть: КЛЮЧ:HWID
     for line in string.gmatch(database_text, "[^\r\n]+") do
         local split = string.split(line, ":")
-        local db_key = split[1]
-        local db_hwid = split[2]
+        if #split >= 2 then
+            local db_key = split[1]
+            local db_hwid = split[2]
 
-        -- Если ключ из базы совпал с тем, что ввел игрок
-        if key == db_key then
-            -- Проверяем, совпадает ли железо
-            if my_hwid == db_hwid then
-                return true, "Success! Welcome."
-            else
-                return false, "Key is locked to another PC!"
+            if key == db_key then
+                if my_hwid == db_hwid then
+                    return true, "Success! Welcome."
+                else
+                    return false, "Key locked to another PC!"
+                end
             end
         end
     end
 
-    -- Если цикл закончился и ключ не найден
     return false, "Invalid Key!"
 end
+
 -----------------------------------------
 -- UI БИБЛИОТЕКА И АНИМАЦИИ
 -----------------------------------------
@@ -108,8 +100,8 @@ function UI.new(titleText)
 
     -- ЭКРАН КЛЮЧА
     self.KeyFrame = Instance.new("CanvasGroup", self.ScreenGui)
-    self.KeyFrame.Size = UDim2.new(0, 350, 0, 200)
-    self.KeyFrame.Position = UDim2.new(0.5, -175, 0.5, -100)
+    self.KeyFrame.Size = UDim2.new(0, 350, 0, 230) -- Увеличил высоту до 230
+    self.KeyFrame.Position = UDim2.new(0.5, -175, 0.5, -115)
     self.KeyFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
     self.KeyFrame.BorderSizePixel = 0
     self.KeyFrame.GroupTransparency = 1
@@ -135,18 +127,20 @@ function UI.new(titleText)
     self.KeyInput.TextSize = 14
     Instance.new("UICorner", self.KeyInput).CornerRadius = UDim.new(0, 6)
 
-    self.VerifyBtn = Instance.new("TextButton", self.KeyFrame)
-    self.VerifyBtn.Size = UDim2.new(0.42, 0, 0, 40)
-    self.VerifyBtn.Position = UDim2.new(0.05, 0, 0, 100)
-    self.VerifyBtn.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
-    self.VerifyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    self.VerifyBtn.Text = "Verify Key"
-    self.VerifyBtn.Font = Enum.Font.MontserratBold
-    self.VerifyBtn.TextSize = 14
-    Instance.new("UICorner", self.VerifyBtn).CornerRadius = UDim.new(0, 6)
+    -- Кнопка HWID
+    self.HwidBtn = Instance.new("TextButton", self.KeyFrame)
+    self.HwidBtn.Size = UDim2.new(0.42, 0, 0, 35)
+    self.HwidBtn.Position = UDim2.new(0.05, 0, 0, 100)
+    self.HwidBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+    self.HwidBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    self.HwidBtn.Text = "Copy HWID"
+    self.HwidBtn.Font = Enum.Font.MontserratBold
+    self.HwidBtn.TextSize = 13
+    Instance.new("UICorner", self.HwidBtn).CornerRadius = UDim.new(0, 6)
 
+    -- Кнопка Discord
     self.DiscordBtn = Instance.new("TextButton", self.KeyFrame)
-    self.DiscordBtn.Size = UDim2.new(0.42, 0, 0, 40)
+    self.DiscordBtn.Size = UDim2.new(0.42, 0, 0, 35)
     self.DiscordBtn.Position = UDim2.new(0.53, 0, 0, 100)
     self.DiscordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
     self.DiscordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -155,9 +149,20 @@ function UI.new(titleText)
     self.DiscordBtn.TextSize = 13
     Instance.new("UICorner", self.DiscordBtn).CornerRadius = UDim.new(0, 6)
 
+    -- Кнопка Verify (Сделал её широкой и ниже)
+    self.VerifyBtn = Instance.new("TextButton", self.KeyFrame)
+    self.VerifyBtn.Size = UDim2.new(0.9, 0, 0, 40)
+    self.VerifyBtn.Position = UDim2.new(0.05, 0, 0, 145)
+    self.VerifyBtn.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+    self.VerifyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    self.VerifyBtn.Text = "Verify Key"
+    self.VerifyBtn.Font = Enum.Font.MontserratBold
+    self.VerifyBtn.TextSize = 14
+    Instance.new("UICorner", self.VerifyBtn).CornerRadius = UDim.new(0, 6)
+
     self.StatusText = Instance.new("TextLabel", self.KeyFrame)
     self.StatusText.Size = UDim2.new(1, 0, 0, 30)
-    self.StatusText.Position = UDim2.new(0, 0, 0, 150)
+    self.StatusText.Position = UDim2.new(0, 0, 0, 195)
     self.StatusText.BackgroundTransparency = 1
     self.StatusText.Text = "Waiting for key..."
     self.StatusText.TextColor3 = Color3.fromRGB(150, 150, 150)
@@ -203,7 +208,25 @@ function UI.new(titleText)
     self.PageContainer.Position = UDim2.new(0, 10, 0, 90)
     self.PageContainer.BackgroundTransparency = 1
 
-    -- ЛОГИКА КНОПОК КЛЮЧА
+    -- ЛОГИКА КНОПОК
+    self.HwidBtn.MouseButton1Click:Connect(function()
+        local my_hwid = "UNKNOWN"
+        if gethwid then
+            pcall(function() my_hwid = gethwid() end)
+        else
+            pcall(function() my_hwid = game:GetService("RbxAnalyticsService"):GetClientId() end)
+        end
+        
+        if setclipboard then
+            pcall(function() setclipboard(my_hwid) end)
+            self.StatusText.Text = "HWID copied! Send it to the dev."
+            self.StatusText.TextColor3 = Color3.fromRGB(50, 200, 50)
+        else
+            self.StatusText.Text = "Your exploit doesn't support clipboard copying."
+            self.StatusText.TextColor3 = Color3.fromRGB(200, 50, 50)
+        end
+    end)
+
     self.DiscordBtn.MouseButton1Click:Connect(function()
         if setclipboard then
             pcall(function() setclipboard(DiscordLink) end)
@@ -221,7 +244,7 @@ function UI.new(titleText)
         local isValid, msg = VerifyKeyWithServer(key)
 
         if isValid then
-            self.StatusText.Text = "Key Verified! Loading Hub..."
+            self.StatusText.Text = msg or "Key Verified! Loading Hub..."
             self.StatusText.TextColor3 = Color3.fromRGB(50, 200, 50)
             self.VerifyBtn.Text = "Success"
             task.wait(1)
