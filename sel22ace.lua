@@ -1,6 +1,4 @@
--- [[ SELACE HUB PREMIUM EDITION ]] --
--- [[ MADE BY SELACE ]] --
-
+-- [[ SELACE HUB PREMIUM - FIXED FOR XENO ]] --
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
@@ -29,7 +27,7 @@ local Config = {
 local OriginalLighting = { Ambient = Lighting.Ambient, GlobalShadows = Lighting.GlobalShadows, ClockTime = Lighting.ClockTime }
 
 -----------------------------------------
--- UTILITIES
+-- AUTH SYSTEM
 -----------------------------------------
 local function GetHWID()
     local id = "UNKNOWN"
@@ -51,79 +49,81 @@ local function VerifyKey(key)
             return true, "Success!"
         end
     end
-    return false, "Invalid Key / HWID Mismatch"
+    return false, "Invalid Key / HWID mismatch"
 end
 
 -----------------------------------------
 -- UI CONSTRUCTION
 -----------------------------------------
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SelaceHub"
+ScreenGui.Name = "SelaceHubPremium"
 ScreenGui.ResetOnSpawn = false
 pcall(function() ScreenGui.Parent = CoreGui end)
 if not ScreenGui.Parent then ScreenGui.Parent = player:WaitForChild("PlayerGui") end
 
 -- Loading Screen
 local Loading = Instance.new("Frame", ScreenGui)
-Loading.Size = UDim2.new(0, 250, 0, 70)
-Loading.Position = UDim2.new(0.5, -125, 0.5, -35)
-Loading.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+Loading.Size = UDim2.new(0, 260, 0, 80)
+Loading.Position = UDim2.new(0.5, -130, 0.5, -40)
+Loading.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
 Instance.new("UICorner", Loading)
 local LoadLabel = Instance.new("TextLabel", Loading)
 LoadLabel.Size = UDim2.new(1, 0, 1, 0)
 LoadLabel.BackgroundTransparency = 1
 LoadLabel.Text = "Injecting Selace Hub..."
 LoadLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-LoadLabel.Font = Enum.Font.MontserratBold
+LoadLabel.Font = Enum.Font.GothamBold -- Fixed font
 LoadLabel.TextSize = 16
 
 -- Main Window
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 450, 0, 520)
-Main.Position = UDim2.new(0.5, -225, 0.5, -260)
+Main.Size = UDim2.size(450, 530)
+Main.Position = UDim2.new(0.5, -225, 0.5, -265)
 Main.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
-Main.BorderSizePixel = 0
 Main.Visible = false
 Main.Active = true
-Main.Draggable = true -- The whole menu is draggable
+Main.Draggable = true -- Entire menu is draggable
 Instance.new("UICorner", Main)
+local MainStroke = Instance.new("UIStroke", Main)
+MainStroke.Color = Color3.fromRGB(138, 43, 226)
+MainStroke.Thickness = 1.5
 
--- Header (Static Text)
+-- Static Header (Labels inside don't handle dragging)
 local Header = Instance.new("Frame", Main)
-Header.Size = UDim2.new(1, 0, 0, 70)
+Header.Size = UDim2.new(1, 0, 0, 65)
 Header.BackgroundTransparency = 1
 
 local MainTitle = Instance.new("TextLabel", Header)
-MainTitle.Size = UDim2.new(1, 0, 0, 30)
-MainTitle.Position = UDim2.new(0, 0, 0, 15)
-MainTitle.Text = "Selace Hub"
+MainTitle.Size = UDim2.new(1, 0, 0, 35)
+MainTitle.Position = UDim2.new(0, 0, 0, 10)
+MainTitle.Text = "SELACE HUB"
 MainTitle.TextColor3 = Color3.fromRGB(160, 80, 255)
-MainTitle.Font = Enum.Font.MontserratBold
-MainTitle.TextSize = 26
+MainTitle.Font = Enum.Font.GothamBold -- Fixed font
+MainTitle.TextSize = 24
 MainTitle.BackgroundTransparency = 1
 
 local SubTitle = Instance.new("TextLabel", Header)
-SubTitle.Size = UDim2.new(1, 0, 0, 20)
+SubTitle.Size = UDim2.new(1, 0, 0, 15)
 SubTitle.Position = UDim2.new(0, 0, 0, 42)
 SubTitle.Text = "Made by Selace"
-SubTitle.TextColor3 = Color3.fromRGB(120, 120, 140)
-SubTitle.Font = Enum.Font.MontserratSemibold
+SubTitle.TextColor3 = Color3.fromRGB(140, 140, 160)
+SubTitle.Font = Enum.Font.SourceSansBold -- Fixed font
 SubTitle.TextSize = 12
 SubTitle.BackgroundTransparency = 1
 
 -- Tab Bar
 local TabBar = Instance.new("Frame", Main)
-TabBar.Size = UDim2.new(1, -20, 0, 35)
-TabBar.Position = UDim2.new(0, 10, 0, 80)
+TabBar.Size = UDim2.new(1, -30, 0, 40)
+TabBar.Position = UDim2.new(0, 15, 0, 75)
 TabBar.BackgroundTransparency = 1
 local TabLayout = Instance.new("UIListLayout", TabBar)
 TabLayout.FillDirection = Enum.FillDirection.Horizontal
 TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 TabLayout.Padding = UDim.new(0, 8)
 
--- Content Container
+-- Page Container
 local Container = Instance.new("Frame", Main)
-Container.Size = UDim2.new(1, -30, 1, -165)
+Container.Size = UDim2.new(1, -30, 1, -155)
 Container.Position = UDim2.new(0, 15, 0, 125)
 Container.BackgroundTransparency = 1
 
@@ -131,52 +131,55 @@ Container.BackgroundTransparency = 1
 local Hint = Instance.new("TextLabel", Main)
 Hint.Size = UDim2.new(1, 0, 0, 25)
 Hint.Position = UDim2.new(0, 0, 1, -25)
-Hint.Text = "Press Right Shift to hide | Change keybind in Settings"
-Hint.TextColor3 = Color3.fromRGB(100, 100, 110)
-Hint.Font = Enum.Font.Montserrat
+Hint.Text = "Press Right Shift to hide menu | Keybind can be changed in Settings"
+Hint.TextColor3 = Color3.fromRGB(100, 100, 120)
+Hint.Font = Enum.Font.SourceSans -- Fixed font
 Hint.TextSize = 11
 Hint.BackgroundTransparency = 1
 
 -- KEY SYSTEM
 local KeyFrame = Instance.new("Frame", ScreenGui)
-KeyFrame.Size = UDim2.new(0, 350, 0, 220)
-KeyFrame.Position = UDim2.new(0.5, -175, 0.5, -110)
-KeyFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 18)
+KeyFrame.Size = UDim2.size(360, 240)
+KeyFrame.Position = UDim2.new(0.5, -180, 0.5, -120)
+KeyFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
 KeyFrame.Visible = false
 Instance.new("UICorner", KeyFrame)
 
 local KeyBox = Instance.new("TextBox", KeyFrame)
 KeyBox.Size = UDim2.new(0.9, 0, 0, 40)
-KeyBox.Position = UDim2.new(0.05, 0, 0, 60)
-KeyBox.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+KeyBox.Position = UDim2.new(0.05, 0, 0, 55)
+KeyBox.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+KeyBox.PlaceholderText = "Enter premium key..."
 KeyBox.Text = ""
-KeyBox.PlaceholderText = "Enter Key..."
 KeyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+KeyBox.Font = Enum.Font.SourceSans
 Instance.new("UICorner", KeyBox)
 
 local VerifyBtn = Instance.new("TextButton", KeyFrame)
 VerifyBtn.Size = UDim2.new(0.9, 0, 0, 40)
-VerifyBtn.Position = UDim2.new(0.05, 0, 0, 110)
+VerifyBtn.Position = UDim2.new(0.05, 0, 0, 150)
 VerifyBtn.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
 VerifyBtn.Text = "Verify Key"
 VerifyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-VerifyBtn.Font = Enum.Font.MontserratBold
+VerifyBtn.Font = Enum.Font.GothamBold
 Instance.new("UICorner", VerifyBtn)
 
 local HwidBtn = Instance.new("TextButton", KeyFrame)
 HwidBtn.Size = UDim2.new(0.43, 0, 0, 35)
-HwidBtn.Position = UDim2.new(0.05, 0, 0, 160)
-HwidBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+HwidBtn.Position = UDim2.new(0.05, 0, 0, 105)
+HwidBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
 HwidBtn.Text = "Copy HWID"
 HwidBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+HwidBtn.Font = Enum.Font.GothamBold
 Instance.new("UICorner", HwidBtn)
 
 local DiscordBtn = Instance.new("TextButton", KeyFrame)
 DiscordBtn.Size = UDim2.new(0.43, 0, 0, 35)
-DiscordBtn.Position = UDim2.new(0.52, 0, 0, 160)
+DiscordBtn.Position = UDim2.new(0.52, 0, 0, 105)
 DiscordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
 DiscordBtn.Text = "Get Key"
 DiscordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+DiscordBtn.Font = Enum.Font.GothamBold
 Instance.new("UICorner", DiscordBtn)
 
 -----------------------------------------
@@ -187,8 +190,8 @@ local function CreateTab(name)
     b.Size = UDim2.new(0, 95, 1, 0)
     b.Text = name
     b.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-    b.TextColor3 = Color3.fromRGB(180, 180, 180)
-    b.Font = Enum.Font.MontserratBold
+    b.TextColor3 = Color3.fromRGB(150, 150, 150)
+    b.Font = Enum.Font.GothamBold
     b.TextSize = 12
     Instance.new("UICorner", b)
     
@@ -202,7 +205,7 @@ local function CreateTab(name)
 
     b.MouseButton1Click:Connect(function()
         for _, v in pairs(Container:GetChildren()) do if v:IsA("ScrollingFrame") then v.Visible = false end end
-        for _, v in pairs(TabBar:GetChildren()) do if v:IsA("TextButton") then v.TextColor3 = Color3.fromRGB(180, 180, 180) end end
+        for _, v in pairs(TabBar:GetChildren()) do if v:IsA("TextButton") then v.TextColor3 = Color3.fromRGB(150, 150, 150) end end
         p.Visible = true
         b.TextColor3 = Color3.fromRGB(255, 255, 255)
     end)
@@ -215,7 +218,7 @@ local function AddToggle(parent, text, callback)
     btn.Text = text .. " [OFF]"
     btn.BackgroundColor3 = Color3.fromRGB(30, 25, 25)
     btn.TextColor3 = Color3.fromRGB(255, 80, 80)
-    btn.Font = Enum.Font.MontserratBold
+    btn.Font = Enum.Font.GothamBold
     Instance.new("UICorner", btn)
     
     local s = false
@@ -235,6 +238,7 @@ local function AddInput(parent, placeholder, callback)
     box.PlaceholderText = placeholder
     box.Text = ""
     box.TextColor3 = Color3.fromRGB(255, 255, 255)
+    box.Font = Enum.Font.SourceSans
     Instance.new("UICorner", box)
     box.FocusLost:Connect(function() callback(box.Text) end)
 end
@@ -259,12 +263,13 @@ AddToggle(TabV, "FullBright", function(s) Config.Visuals.FullBright = s end)
 AddInput(TabV, "Time of Day (0-24)", function(t) Config.Visuals.TimeOfDay = tonumber(t) or 14 end)
 AddToggle(TabV, "Enable Custom Time", function(s) Config.Visuals.CustomTime = s end)
 
--- Settings Keybind
+-- Settings Bind
 local BindBtn = Instance.new("TextButton", TabS)
 BindBtn.Size = UDim2.new(0.95, 0, 0, 40)
 BindBtn.Text = "Toggle Key: " .. Config.Settings.ToggleKey.Name
 BindBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
 BindBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+BindBtn.Font = Enum.Font.GothamBold
 Instance.new("UICorner", BindBtn)
 
 local binding = false
@@ -285,7 +290,7 @@ UserInputService.InputBegan:Connect(function(input, gp)
 end)
 
 -----------------------------------------
--- LOGIC & AUTH
+-- LOGIC
 -----------------------------------------
 HwidBtn.MouseButton1Click:Connect(function()
     if setclipboard then setclipboard(GetHWID()) HwidBtn.Text = "COPIED!" task.wait(1) HwidBtn.Text = "Copy HWID" end
@@ -309,7 +314,6 @@ VerifyBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Main Loop
 RunService.Heartbeat:Connect(function()
     pcall(function()
         local char = player.Character
@@ -327,9 +331,8 @@ RunService.Heartbeat:Connect(function()
     end)
 end)
 
--- Start Sequence
 task.spawn(function()
-    task.wait(5) -- 5 second wait for loading
+    task.wait(4)
     Loading:Destroy()
     KeyFrame.Visible = true
 end)
