@@ -1,4 +1,4 @@
--- [[ SELACE HUB PREMIUM - FIXED FOR XENO ]] --
+-- [[ SELACE HUB PREMIUM - 100% FIXED ]] --
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
@@ -11,7 +11,7 @@ local DiscordLink = "https://discord.gg/9eYR7ecMu"
 local DatabaseURL = "https://pastebin.com/raw/2aVHcEnn"
 
 -----------------------------------------
--- CONFIGURATION
+-- SETTINGS
 -----------------------------------------
 local Config = {
     Gameplay = { JumpPower = 25.5, JumpEnabled = false, WalkSpeed = 16, SpeedEnabled = false, TiltPower = 4000, TiltEnabled = false },
@@ -72,23 +72,23 @@ LoadLabel.Size = UDim2.new(1, 0, 1, 0)
 LoadLabel.BackgroundTransparency = 1
 LoadLabel.Text = "Injecting Selace Hub..."
 LoadLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-LoadLabel.Font = Enum.Font.GothamBold -- Fixed font
+LoadLabel.Font = Enum.Font.GothamBold
 LoadLabel.TextSize = 16
 
 -- Main Window
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.size(450, 530)
+Main.Size = UDim2.new(0, 450, 0, 530) -- FIXED LINE (No more nil error)
 Main.Position = UDim2.new(0.5, -225, 0.5, -265)
 Main.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
 Main.Visible = false
 Main.Active = true
-Main.Draggable = true -- Entire menu is draggable
+Main.Draggable = true 
 Instance.new("UICorner", Main)
 local MainStroke = Instance.new("UIStroke", Main)
 MainStroke.Color = Color3.fromRGB(138, 43, 226)
 MainStroke.Thickness = 1.5
 
--- Static Header (Labels inside don't handle dragging)
+-- Header
 local Header = Instance.new("Frame", Main)
 Header.Size = UDim2.new(1, 0, 0, 65)
 Header.BackgroundTransparency = 1
@@ -98,7 +98,7 @@ MainTitle.Size = UDim2.new(1, 0, 0, 35)
 MainTitle.Position = UDim2.new(0, 0, 0, 10)
 MainTitle.Text = "SELACE HUB"
 MainTitle.TextColor3 = Color3.fromRGB(160, 80, 255)
-MainTitle.Font = Enum.Font.GothamBold -- Fixed font
+MainTitle.Font = Enum.Font.GothamBold
 MainTitle.TextSize = 24
 MainTitle.BackgroundTransparency = 1
 
@@ -107,7 +107,7 @@ SubTitle.Size = UDim2.new(1, 0, 0, 15)
 SubTitle.Position = UDim2.new(0, 0, 0, 42)
 SubTitle.Text = "Made by Selace"
 SubTitle.TextColor3 = Color3.fromRGB(140, 140, 160)
-SubTitle.Font = Enum.Font.SourceSansBold -- Fixed font
+SubTitle.Font = Enum.Font.Gotham
 SubTitle.TextSize = 12
 SubTitle.BackgroundTransparency = 1
 
@@ -131,15 +131,15 @@ Container.BackgroundTransparency = 1
 local Hint = Instance.new("TextLabel", Main)
 Hint.Size = UDim2.new(1, 0, 0, 25)
 Hint.Position = UDim2.new(0, 0, 1, -25)
-Hint.Text = "Press Right Shift to hide menu | Keybind can be changed in Settings"
+Hint.Text = "Press Right Shift to hide | Change bind in Settings"
 Hint.TextColor3 = Color3.fromRGB(100, 100, 120)
-Hint.Font = Enum.Font.SourceSans -- Fixed font
+Hint.Font = Enum.Font.Gotham
 Hint.TextSize = 11
 Hint.BackgroundTransparency = 1
 
 -- KEY SYSTEM
 local KeyFrame = Instance.new("Frame", ScreenGui)
-KeyFrame.Size = UDim2.size(360, 240)
+KeyFrame.Size = UDim2.new(0, 360, 0, 240) -- FIXED LINE
 KeyFrame.Position = UDim2.new(0.5, -180, 0.5, -120)
 KeyFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
 KeyFrame.Visible = false
@@ -152,7 +152,7 @@ KeyBox.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
 KeyBox.PlaceholderText = "Enter premium key..."
 KeyBox.Text = ""
 KeyBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-KeyBox.Font = Enum.Font.SourceSans
+KeyBox.Font = Enum.Font.Gotham
 Instance.new("UICorner", KeyBox)
 
 local VerifyBtn = Instance.new("TextButton", KeyFrame)
@@ -238,7 +238,7 @@ local function AddInput(parent, placeholder, callback)
     box.PlaceholderText = placeholder
     box.Text = ""
     box.TextColor3 = Color3.fromRGB(255, 255, 255)
-    box.Font = Enum.Font.SourceSans
+    box.Font = Enum.Font.Gotham
     Instance.new("UICorner", box)
     box.FocusLost:Connect(function() callback(box.Text) end)
 end
@@ -328,6 +328,15 @@ RunService.Heartbeat:Connect(function()
         end
         if Config.Visuals.FullBright then Lighting.Ambient = Color3.fromRGB(255, 255, 255) Lighting.GlobalShadows = false end
         if Config.Visuals.CustomTime then Lighting.ClockTime = Config.Visuals.TimeOfDay end
+        
+        -- Attribute spoofing (Misc)
+        if Config.Misc.AttrEnabled then
+            local data = player:FindFirstChild("Data")
+            if data then
+                data:SetAttribute("Technical", Config.Misc.TechList[Config.Misc.CurrentTech])
+                data:SetAttribute("Physical", Config.Misc.PhysicsList[Config.Misc.CurrentPhysics])
+            end
+        end
     end)
 end)
 
