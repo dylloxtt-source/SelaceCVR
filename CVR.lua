@@ -1,178 +1,133 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
-local Lighting = game:GetService("Lighting")
 
 local player = Players.LocalPlayer
-local camera = workspace.CurrentCamera or workspace:WaitForChild("Camera")
 
 -----------------------------------------
--- НАСТРОЙКИ ЗНАЧЕНИЙ
+-- НАСТРОЙКИ ЗНАЧЕНИЙ (Переменные)
 -----------------------------------------
-local Settings = {
-    Jump = { Power = 25.5, Enabled = false },
-    Speed = { Power = 16, Enabled = false },
-    Tilt = { Power = 4000, Running = false },
-    Attributes = {
-        PhysicsList = {"Bounce", "Athletic", "Wide Reach", "Sprinter", "Solid form", "All Rounder"},
-        TechList = {"Backrow Blitz", "Mind Reader", "Unbreakable", "Wiper", "Stance", "Fast Approach"},
-        CurrentPhysics = 2,
-        CurrentTech = 6,
-        Running = false
-    },
-    Visuals = {
-        FOV = 70,
-        Fullbright = false
-    }
+local JumpSettings = {
+    Power = 25.5,
+    Enabled = true -- Прыжок работает всегда по твоей логике, но можно выключать
+}
+
+local AttributeSettings = {
+    PhysicsList = {"Bounce", "Athletic", "Wide Reach", "Sprinter", "Solid form", "All Rounder"},
+    TechList = {"Backrow Blitz", "Mind Reader", "Unbreakable", "Wiper", "Stance", "Fast Approach"},
+    CurrentPhysicsIndex = 2, -- Athletic
+    CurrentTechIndex = 6, -- Fast Approach
+    Running = false
+}
+
+local TiltSettings = {
+    Power = 4000,
+    Running = false
 }
 
 -----------------------------------------
--- UI БИБЛИОТЕКА (OOP) С ВКЛАДКАМИ
+-- UI БИБЛИОТЕКА (OOP)
 -----------------------------------------
 local UIHub = {}
 UIHub.__index = UIHub
 
 function UIHub.new(titleText)
     local self = setmetatable({}, UIHub)
-    self.Tabs = {}
     
     self.ScreenGui = Instance.new("ScreenGui")
-    self.ScreenGui.Name = "SelaceHub"
+    self.ScreenGui.Name = "MinimalistControlHub"
     self.ScreenGui.ResetOnSpawn = false
     
-    -- Безопасная загрузка в CoreGui
     local success = pcall(function() self.ScreenGui.Parent = CoreGui end)
-    if not success then 
-        self.ScreenGui.Parent = player:WaitForChild("PlayerGui") 
-    end
+    if not success then self.ScreenGui.Parent = player:WaitForChild("PlayerGui") end
     
     self.MainFrame = Instance.new("Frame")
-    self.MainFrame.Size = UDim2.new(0, 420, 0, 480)
-    self.MainFrame.Position = UDim2.new(0.5, -210, 0.5, -240)
-    self.MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+    self.MainFrame.Size = UDim2.new(0, 350, 0, 500)
+    self.MainFrame.Position = UDim2.new(0.5, -175, 0.5, -250)
+    self.MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     self.MainFrame.BorderSizePixel = 0
-    self.MainFrame.Active = true
-    self.MainFrame.Draggable = true
     self.MainFrame.Parent = self.ScreenGui
+    self.MainFrame.Active = true
+    self.MainFrame.Draggable = true -- Можно перетаскивать по экрану
     
-    Instance.new("UICorner", self.MainFrame).CornerRadius = UDim.new(0, 10)
-    local Stroke = Instance.new("UIStroke", self.MainFrame)
-    Stroke.Color = Color3.fromRGB(50, 50, 50)
-    Stroke.Thickness = 1.5
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 8)
+    UICorner.Parent = self.MainFrame
     
     local Title = Instance.new("TextLabel")
-    Title.Size = UDim2.new(1, 0, 0, 45)
+    Title.Size = UDim2.new(1, 0, 0, 40)
     Title.BackgroundTransparency = 1
     Title.Text = titleText
     Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Title.TextSize = 22
+    Title.Font = Enum.Font.GothamBold
+    Title.TextSize = 18
     Title.Parent = self.MainFrame
     
-    -- Безопасная установка шрифта Lilita One (чтобы скрипт не крашился)
-    local fontSuccess = pcall(function()
-        Title.FontFace = Font.new("rbxasset://fonts/families/LilitaOne.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
-    end)
-    if not fontSuccess then
-        Title.Font = Enum.Font.GothamBlack
-    end
+    -- Контейнер с прокруткой для элементов
+    self.Container = Instance.new("ScrollingFrame")
+    self.Container.Size = UDim2.new(1, 0, 1, -50)
+    self.Container.Position = UDim2.new(0, 0, 0, 45)
+    self.Container.BackgroundTransparency = 1
+    self.Container.ScrollBarThickness = 4
+    self.Container.CanvasSize = UDim2.new(0, 0, 0, 0)
+    self.Container.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    self.Container.Parent = self.MainFrame
     
-    self.TabContainer = Instance.new("Frame")
-    self.TabContainer.Size = UDim2.new(1, -20, 0, 35)
-    self.TabContainer.Position = UDim2.new(0, 10, 0, 45)
-    self.TabContainer.BackgroundTransparency = 1
-    self.TabContainer.Parent = self.MainFrame
+    local UIListLayout = Instance.new("UIListLayout")
+    UIListLayout.Padding = UDim.new(0, 8)
+    UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    UIListLayout.Parent = self.Container
     
-    local TabListLayout = Instance.new("UIListLayout")
-    TabListLayout.FillDirection = Enum.FillDirection.Horizontal
-    TabListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    TabListLayout.Padding = UDim.new(0, 8)
-    TabListLayout.Parent = self.TabContainer
-    
-    self.PageContainer = Instance.new("Frame")
-    self.PageContainer.Size = UDim2.new(1, -20, 1, -95)
-    self.PageContainer.Position = UDim2.new(0, 10, 0, 85)
-    self.PageContainer.BackgroundTransparency = 1
-    self.PageContainer.Parent = self.MainFrame
-
     return self
 end
 
-function UIHub:CreateTab(tabName)
-    local TabButton = Instance.new("TextButton")
-    TabButton.Size = UDim2.new(0, 120, 1, 0)
-    TabButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    TabButton.TextColor3 = Color3.fromRGB(150, 150, 150)
-    TabButton.Text = tabName
-    TabButton.Font = Enum.Font.GothamBold
-    TabButton.TextSize = 13
-    TabButton.Parent = self.TabContainer
-    Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 6)
-    
-    local Page = Instance.new("ScrollingFrame")
-    Page.Size = UDim2.new(1, 0, 1, 0)
-    Page.BackgroundTransparency = 1
-    Page.ScrollBarThickness = 3
-    Page.CanvasSize = UDim2.new(0, 0, 5, 0) -- Запас для прокрутки
-    Page.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    Page.Visible = false
-    Page.Parent = self.PageContainer
-    
-    local UIListLayout = Instance.new("UIListLayout")
-    UIListLayout.Padding = UDim.new(0, 10)
-    UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    UIListLayout.Parent = Page
-    
-    TabButton.MouseButton1Click:Connect(function()
-        for _, tabInfo in pairs(self.Tabs) do
-            tabInfo.Page.Visible = false
-            tabInfo.Button.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-            tabInfo.Button.TextColor3 = Color3.fromRGB(150, 150, 150)
-        end
-        Page.Visible = true
-        TabButton.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
-        TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    end)
-    
-    table.insert(self.Tabs, {Button = TabButton, Page = Page})
-    if #self.Tabs == 1 then
-        Page.Visible = true
-        TabButton.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
-        TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    end
-    
-    return Page
+function UIHub:AddLabel(text)
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(0.9, 0, 0, 20)
+    Label.BackgroundTransparency = 1
+    Label.Text = text
+    Label.TextColor3 = Color3.fromRGB(180, 180, 180)
+    Label.Font = Enum.Font.GothamSemibold
+    Label.TextSize = 14
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.Parent = self.Container
 end
 
-function UIHub:AddInput(page, placeholder, defaultText, callback)
+function UIHub:AddInput(placeholder, defaultText, callback)
     local InputBox = Instance.new("TextBox")
-    InputBox.Size = UDim2.new(1, -10, 0, 38)
-    InputBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    InputBox.Size = UDim2.new(0.9, 0, 0, 35)
+    InputBox.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     InputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
     InputBox.PlaceholderText = placeholder
     InputBox.Text = defaultText
-    InputBox.Font = Enum.Font.GothamMedium
+    InputBox.Font = Enum.Font.Gotham
     InputBox.TextSize = 14
-    InputBox.Parent = page
-    Instance.new("UICorner", InputBox).CornerRadius = UDim.new(0, 6)
-    local stroke = Instance.new("UIStroke", InputBox)
-    stroke.Color = Color3.fromRGB(60, 60, 60)
+    InputBox.Parent = self.Container
     
-    InputBox.FocusLost:Connect(function() callback(InputBox.Text) end)
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = InputBox
+    
+    InputBox.FocusLost:Connect(function(enterPressed)
+        callback(InputBox.Text)
+    end)
 end
 
-function UIHub:AddCycleButton(page, prefix, list, startingIndex, callback)
+function UIHub:AddCycleButton(prefix, list, startingIndex, callback)
     local currentIndex = startingIndex
     local Button = Instance.new("TextButton")
-    Button.Size = UDim2.new(1, -10, 0, 38)
-    Button.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    Button.Size = UDim2.new(0.9, 0, 0, 35)
+    Button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     Button.TextColor3 = Color3.fromRGB(255, 255, 255)
     Button.Text = prefix .. ": " .. list[currentIndex]
-    Button.Font = Enum.Font.GothamMedium
+    Button.Font = Enum.Font.Gotham
     Button.TextSize = 14
-    Button.Parent = page
-    Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 6)
-    local stroke = Instance.new("UIStroke", Button)
-    stroke.Color = Color3.fromRGB(60, 60, 60)
+    Button.Parent = self.Container
+    
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = Button
     
     Button.MouseButton1Click:Connect(function()
         currentIndex = currentIndex + 1
@@ -182,177 +137,133 @@ function UIHub:AddCycleButton(page, prefix, list, startingIndex, callback)
     end)
 end
 
-function UIHub:AddDualButton(page, callbackRun, callbackOff)
-    local Frame = Instance.new("Frame")
-    Frame.Size = UDim2.new(1, -10, 0, 38)
-    Frame.BackgroundTransparency = 1
-    Frame.Parent = page
-
-    local BtnRun = Instance.new("TextButton")
-    BtnRun.Size = UDim2.new(0.5, -5, 1, 0)
-    BtnRun.Position = UDim2.new(0, 0, 0, 0)
-    BtnRun.BackgroundColor3 = Color3.fromRGB(40, 120, 60)
-    BtnRun.TextColor3 = Color3.fromRGB(255, 255, 255)
-    BtnRun.Text = "RUN"
-    BtnRun.Font = Enum.Font.GothamBold
-    BtnRun.TextSize = 14
-    BtnRun.Parent = Frame
-    Instance.new("UICorner", BtnRun).CornerRadius = UDim.new(0, 6)
-
-    local BtnOff = Instance.new("TextButton")
-    BtnOff.Size = UDim2.new(0.5, -5, 1, 0)
-    BtnOff.Position = UDim2.new(0.5, 5, 0, 0)
-    BtnOff.BackgroundColor3 = Color3.fromRGB(150, 40, 40)
-    BtnOff.TextColor3 = Color3.fromRGB(255, 255, 255)
-    BtnOff.Text = "OFF"
-    BtnOff.Font = Enum.Font.GothamBold
-    BtnOff.TextSize = 14
-    BtnOff.Parent = Frame
-    Instance.new("UICorner", BtnOff).CornerRadius = UDim.new(0, 6)
-
-    BtnRun.MouseButton1Click:Connect(callbackRun)
-    BtnOff.MouseButton1Click:Connect(callbackOff)
+function UIHub:AddToggle(text, callback)
+    local state = false
+    local Button = Instance.new("TextButton")
+    Button.Size = UDim2.new(0.9, 0, 0, 35)
+    Button.BackgroundColor3 = Color3.fromRGB(180, 50, 50) -- Красный по умолчанию (Выкл)
+    Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Button.Text = text .. " [OFF]"
+    Button.Font = Enum.Font.GothamBold
+    Button.TextSize = 14
+    Button.Parent = self.Container
+    
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 6)
+    Corner.Parent = Button
+    
+    Button.MouseButton1Click:Connect(function()
+        state = not state
+        if state then
+            Button.BackgroundColor3 = Color3.fromRGB(50, 180, 50) -- Зеленый (Вкл)
+            Button.Text = text .. " [ON]"
+        else
+            Button.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+            Button.Text = text .. " [OFF]"
+        end
+        callback(state)
+    end)
 end
+
+-----------------------------------------
+-- ЛОГИКА ИГРЫ (Функции)
+-----------------------------------------
+
+-- 1. ЛОГИКА ПРЫЖКА
+local function SetupJumpLock(character)
+    local humanoid = character:WaitForChild("Humanoid")
+    
+    humanoid:GetPropertyChangedSignal("JumpPower"):Connect(function()
+        if JumpSettings.Enabled and humanoid.JumpPower ~= 0 and humanoid.JumpPower ~= JumpSettings.Power then
+            humanoid.JumpPower = JumpSettings.Power
+        end
+    end)
+    
+    local connection
+    connection = RunService.Heartbeat:Connect(function()
+        if not JumpSettings.Enabled then return end
+        if humanoid.Parent then
+            if humanoid.JumpPower ~= 0 and humanoid.JumpPower ~= JumpSettings.Power then
+                humanoid.JumpPower = JumpSettings.Power
+            end
+        else
+            connection:Disconnect()
+        end
+    end)
+end
+
+if player.Character then SetupJumpLock(player.Character) end
+player.CharacterAdded:Connect(SetupJumpLock)
+
+-- 2. ЛОГИКА АТРИБУТОВ (Техника и Физика)
+RunService.Heartbeat:Connect(function()
+    if AttributeSettings.Running then
+        local data = player:FindFirstChild("Data")
+        if data then
+            data:SetAttribute("Technical", AttributeSettings.TechList[AttributeSettings.CurrentTechIndex])
+            data:SetAttribute("Physical", AttributeSettings.PhysicsList[AttributeSettings.CurrentPhysicsIndex])
+        end
+    end
+end)
+
+-- 3. ЛОГИКА ТИЛЬТОВ
+RunService.Heartbeat:Connect(function()
+    if TiltSettings.Running then
+        local char = player.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local tilt = char.HumanoidRootPart:FindFirstChild("Tilt")
+            if tilt and tilt:IsA("AlignOrientation") or tilt:IsA("BodyPosition") or tilt.ClassName:match("Body") then
+                -- Учитываем, что Tilt может быть разным типом BodyMover, просто меняем P
+                pcall(function()
+                    tilt.P = TiltSettings.Power
+                end)
+            end
+        end
+    end
+end)
 
 -----------------------------------------
 -- ПОСТРОЕНИЕ ИНТЕРФЕЙСА
 -----------------------------------------
-local Hub = UIHub.new("Made by selace")
+local Hub = UIHub.new("Script Control Panel")
 
-local TabGameplay = Hub:CreateTab("Геймплей")
-local TabMisc = Hub:CreateTab("Миск")
-local TabVisuals = Hub:CreateTab("Визуалс")
-
--- =====================================
--- ВКЛАДКА 1: ГЕЙМПЛЕЙ
--- =====================================
-Hub:AddInput(TabGameplay, "Сила прыжка", tostring(Settings.Jump.Power), function(val)
+-- РАЗДЕЛ: ПРЫЖОК
+Hub:AddLabel("--- JUMP SETTINGS ---")
+Hub:AddInput("Установите силу прыжка", tostring(JumpSettings.Power), function(val)
     local num = tonumber(val)
-    if num then Settings.Jump.Power = num end
+    if num then
+        JumpSettings.Power = num
+        -- Сразу применяем к текущему персонажу, если он жив
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            local hum = player.Character.Humanoid
+            if hum.JumpPower ~= 0 then hum.JumpPower = num end
+        end
+    end
 end)
-Hub:AddDualButton(TabGameplay, 
-    function() Settings.Jump.Enabled = true end, 
-    function() Settings.Jump.Enabled = false end
-)
 
-Hub:AddInput(TabGameplay, "Скорость бега", tostring(Settings.Speed.Power), function(val)
+-- РАЗДЕЛ: АТРИБУТЫ (Физика и Техника)
+Hub:AddLabel("--- PHYSICS & TECHNICALS ---")
+Hub:AddCycleButton("Physics", AttributeSettings.PhysicsList, AttributeSettings.CurrentPhysicsIndex, function(newIndex)
+    AttributeSettings.CurrentPhysicsIndex = newIndex
+end)
+
+Hub:AddCycleButton("Technical", AttributeSettings.TechList, AttributeSettings.CurrentTechIndex, function(newIndex)
+    AttributeSettings.CurrentTechIndex = newIndex
+end)
+
+Hub:AddToggle("Run Attributes", function(state)
+    AttributeSettings.Running = state
+end)
+
+-- РАЗДЕЛ: ТИЛЬТЫ
+Hub:AddLabel("--- TILT SETTINGS ---")
+Hub:AddInput("Tilt Power (2000-4500)", tostring(TiltSettings.Power), function(val)
     local num = tonumber(val)
-    if num then Settings.Speed.Power = num end
-end)
-Hub:AddDualButton(TabGameplay, 
-    function() Settings.Speed.Enabled = true end, 
-    function() Settings.Speed.Enabled = false end
-)
-
-Hub:AddInput(TabGameplay, "Сила Тильта", tostring(Settings.Tilt.Power), function(val)
-    local num = tonumber(val)
-    if num then Settings.Tilt.Power = num end
-end)
-Hub:AddDualButton(TabGameplay, 
-    function() Settings.Tilt.Running = true end, 
-    function() Settings.Tilt.Running = false end
-)
-
--- =====================================
--- ВКЛАДКА 2: МИСК
--- =====================================
-Hub:AddCycleButton(TabMisc, "Physics", Settings.Attributes.PhysicsList, Settings.Attributes.CurrentPhysics, function(idx)
-    Settings.Attributes.CurrentPhysics = idx
-end)
-Hub:AddCycleButton(TabMisc, "Technical", Settings.Attributes.TechList, Settings.Attributes.CurrentTech, function(idx)
-    Settings.Attributes.CurrentTech = idx
-end)
-Hub:AddDualButton(TabMisc, 
-    function() Settings.Attributes.Running = true end, 
-    function() Settings.Attributes.Running = false end
-)
-
--- =====================================
--- ВКЛАДКА 3: ВИЗУАЛС
--- =====================================
-Hub:AddInput(TabVisuals, "FOV (Макс 200)", tostring(Settings.Visuals.FOV), function(val)
-    local num = tonumber(val)
-    if num then 
-        Settings.Visuals.FOV = math.clamp(num, 1, 200)
-        if camera then camera.FieldOfView = Settings.Visuals.FOV end
+    if num then
+        TiltSettings.Power = num
     end
 end)
 
-Hub:AddInput(TabVisuals, "Дальность Тумана (FogEnd)", tostring(Lighting.FogEnd), function(val)
-    local num = tonumber(val)
-    if num then Lighting.FogEnd = num end
-end)
-
-Hub:AddDualButton(TabVisuals, 
-    function() 
-        Settings.Visuals.Fullbright = true
-        Lighting.Ambient = Color3.new(1, 1, 1)
-    end, 
-    function() 
-        Settings.Visuals.Fullbright = false
-        Lighting.Ambient = Color3.fromRGB(0, 0, 0)
-    end
-)
-
------------------------------------------
--- ЛОГИКА ИГРЫ
------------------------------------------
-local function SetupCharacterHooks(character)
-    local humanoid = character:WaitForChild("Humanoid", 5)
-    if not humanoid then return end
-    
-    humanoid:GetPropertyChangedSignal("JumpPower"):Connect(function()
-        if Settings.Jump.Enabled and humanoid.JumpPower ~= 0 and humanoid.JumpPower ~= Settings.Jump.Power then
-            humanoid.JumpPower = Settings.Jump.Power
-        end
-    end)
-    
-    humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
-        if Settings.Speed.Enabled and humanoid.WalkSpeed ~= Settings.Speed.Power then
-            humanoid.WalkSpeed = Settings.Speed.Power
-        end
-    end)
-end
-
-if player.Character then SetupCharacterHooks(player.Character) end
-player.CharacterAdded:Connect(SetupCharacterHooks)
-
-RunService.Heartbeat:Connect(function()
-    local char = player.Character
-    if not char then return end
-    local humanoid = char:FindFirstChild("Humanoid")
-    
-    if Settings.Jump.Enabled and humanoid and humanoid.Parent then
-        if humanoid.JumpPower ~= 0 and humanoid.JumpPower ~= Settings.Jump.Power then
-            humanoid.JumpPower = Settings.Jump.Power
-        end
-    end
-    
-    if Settings.Speed.Enabled and humanoid and humanoid.Parent then
-        if humanoid.WalkSpeed ~= Settings.Speed.Power then
-            humanoid.WalkSpeed = Settings.Speed.Power
-        end
-    end
-    
-    if Settings.Tilt.Running then
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            local tilt = hrp:FindFirstChild("Tilt")
-            if tilt then
-                pcall(function() tilt.P = Settings.Tilt.Power end)
-            end
-        end
-    end
-    
-    if Settings.Attributes.Running then
-        local data = player:FindFirstChild("Data")
-        if data then
-            data:SetAttribute("Technical", Settings.Attributes.TechList[Settings.Attributes.CurrentTech])
-            data:SetAttribute("Physical", Settings.Attributes.PhysicsList[Settings.Attributes.CurrentPhysics])
-        end
-    end
-    
-    if Settings.Visuals.Fullbright then
-        Lighting.Ambient = Color3.new(1, 1, 1)
-    end
+Hub:AddToggle("Run Tilts", function(state)
+    TiltSettings.Running = state
 end)
