@@ -26,35 +26,26 @@ local OriginalLighting = { Ambient = Lighting.Ambient, GlobalShadows = Lighting.
 -----------------------------------------
 local function VerifyKeyWithServer(key)
     local my_hwid = "UNKNOWN"
-    if gethwid then
+    if type(gethwid) == "function" then
         pcall(function() my_hwid = gethwid() end)
     else
         pcall(function() my_hwid = game:GetService("RbxAnalyticsService"):GetClientId() end)
     end
 
-    -- Link to your RAW Pastebin
     local database_url = "https://pastebin.com/raw/2aVHcEnn" 
     
     local success, database_text = pcall(function()
         return game:HttpGet(database_url)
     end)
 
-    if not success then
-        return false, "Error checking DB! Check your internet connection."
-    end
+    if not success then return false, "Error DB! Check connection." end
 
     for line in string.gmatch(database_text, "[^\r\n]+") do
         local split = string.split(line, ":")
         if #split >= 2 then
-            local db_key = split[1]
-            local db_hwid = split[2]
-
-            if key == db_key then
-                if my_hwid == db_hwid then
-                    return true, "Authentication Successful!"
-                else
-                    return false, "Key is locked to another HWID!"
-                end
+            if key == split[1] then
+                if my_hwid == split[2] then return true, "Auth Successful!"
+                else return false, "Key locked to another PC!" end
             end
         end
     end
@@ -63,7 +54,7 @@ local function VerifyKeyWithServer(key)
 end
 
 -----------------------------------------
--- PREMIUM UI LIBRARY
+-- PREMIUM UI LIBRARY (XENO COMPATIBLE)
 -----------------------------------------
 local UI = {}
 UI.__index = UI
@@ -72,11 +63,16 @@ function UI.new()
     local self = setmetatable({}, UI)
     self.Tabs = {}
 
+    -- Защита от дубликатов при перезапуске скрипта
+    local existing = CoreGui:FindFirstChild("SelaceHubPremium") or player:WaitForChild("PlayerGui"):FindFirstChild("SelaceHubPremium")
+    if existing then existing:Destroy() end
+
     self.ScreenGui = Instance.new("ScreenGui")
     self.ScreenGui.Name = "SelaceHubPremium"
     self.ScreenGui.ResetOnSpawn = false
-    pcall(function() self.ScreenGui.Parent = CoreGui end)
-    if not self.ScreenGui.Parent then self.ScreenGui.Parent = player:WaitForChild("PlayerGui") end
+    
+    local success = pcall(function() self.ScreenGui.Parent = CoreGui end)
+    if not success then self.ScreenGui.Parent = player:WaitForChild("PlayerGui") end
     
     -- LOADING SCREEN
     self.LoadingFrame = Instance.new("Frame", self.ScreenGui)
@@ -99,13 +95,13 @@ function UI.new()
     self.LoadingText.TextTransparency = 1
 
     -- KEY SYSTEM FRAME
-    self.KeyFrame = Instance.new("CanvasGroup", self.ScreenGui)
-    self.KeyFrame.Size = UDim2.new(0, 360, 0, 240)
-    self.KeyFrame.Position = UDim2.new(0.5, -180, 0.5, -120)
+    self.KeyFrame = Instance.new("Frame", self.ScreenGui)
+    self.KeyFrame.Size = UDim2.new(0, 0, 0, 0) -- Начинаем с нуля для анимации
+    self.KeyFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     self.KeyFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
     self.KeyFrame.BorderSizePixel = 0
-    self.KeyFrame.GroupTransparency = 1
     self.KeyFrame.Visible = false
+    self.KeyFrame.ClipsDescendants = true
     Instance.new("UICorner", self.KeyFrame).CornerRadius = UDim.new(0, 10)
     Instance.new("UIStroke", self.KeyFrame).Color = Color3.fromRGB(40, 40, 50)
     
@@ -169,19 +165,18 @@ function UI.new()
     self.StatusText.TextSize = 12
 
     -- MAIN HUB INTERFACE
-    self.MainFrame = Instance.new("CanvasGroup", self.ScreenGui)
-    self.MainFrame.Size = UDim2.new(0, 450, 0, 530)
-    self.MainFrame.Position = UDim2.new(0.5, -225, 0.5, -265)
+    self.MainFrame = Instance.new("Frame", self.ScreenGui)
+    self.MainFrame.Size = UDim2.new(0, 0, 0, 0)
+    self.MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     self.MainFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
     self.MainFrame.BorderSizePixel = 0
-    self.MainFrame.GroupTransparency = 1
     self.MainFrame.Visible = false
+    self.MainFrame.ClipsDescendants = true
     Instance.new("UICorner", self.MainFrame).CornerRadius = UDim.new(0, 10)
     local MainStroke = Instance.new("UIStroke", self.MainFrame)
     MainStroke.Color = Color3.fromRGB(138, 43, 226)
     MainStroke.Thickness = 1.5
     
-    -- Draggable Top Bar
     local DragFrame = Instance.new("Frame", self.MainFrame)
     DragFrame.Size = UDim2.new(1, 0, 0, 65)
     DragFrame.BackgroundTransparency = 1
@@ -197,7 +192,6 @@ function UI.new()
     Title.Font = Enum.Font.MontserratBold
     Title.TextSize = 24
     
-    -- Gradient for the Title
     local TitleGradient = Instance.new("UIGradient", Title)
     TitleGradient.Color = ColorSequence.new{
         ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
@@ -213,7 +207,6 @@ function UI.new()
     SubTitle.Font = Enum.Font.MontserratSemibold
     SubTitle.TextSize = 12
     
-    -- Tab Container
     self.TabContainer = Instance.new("Frame", self.MainFrame)
     self.TabContainer.Size = UDim2.new(1, -30, 0, 40)
     self.TabContainer.Position = UDim2.new(0, 15, 0, 75)
@@ -224,13 +217,11 @@ function UI.new()
     TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
     TabLayout.Padding = UDim.new(0, 8)
     
-    -- Page Container
     self.PageContainer = Instance.new("Frame", self.MainFrame)
     self.PageContainer.Size = UDim2.new(1, -30, 1, -155)
     self.PageContainer.Position = UDim2.new(0, 15, 0, 125)
     self.PageContainer.BackgroundTransparency = 1
 
-    -- Bottom Hint Text
     local HintLabel = Instance.new("TextLabel", self.MainFrame)
     HintLabel.Size = UDim2.new(1, 0, 0, 25)
     HintLabel.Position = UDim2.new(0, 0, 1, -25)
@@ -243,24 +234,24 @@ function UI.new()
     -- BUTTON LOGIC
     self.HwidBtn.MouseButton1Click:Connect(function()
         local my_hwid = "UNKNOWN"
-        if gethwid then pcall(function() my_hwid = gethwid() end) else pcall(function() my_hwid = game:GetService("RbxAnalyticsService"):GetClientId() end) end
-        if setclipboard then
+        if type(gethwid) == "function" then pcall(function() my_hwid = gethwid() end) else pcall(function() my_hwid = game:GetService("RbxAnalyticsService"):GetClientId() end) end
+        if type(setclipboard) == "function" then
             pcall(function() setclipboard(my_hwid) end)
             self.StatusText.Text = "HWID copied to clipboard!"
             self.StatusText.TextColor3 = Color3.fromRGB(50, 200, 50)
         else
-            self.StatusText.Text = "Exploit doesn't support clipboard copying."
+            self.StatusText.Text = "Executor doesn't support clipboard copying."
             self.StatusText.TextColor3 = Color3.fromRGB(200, 50, 50)
         end
     end)
 
     self.DiscordBtn.MouseButton1Click:Connect(function()
-        if setclipboard then
+        if type(setclipboard) == "function" then
             pcall(function() setclipboard(DiscordLink) end)
             self.StatusText.Text = "Discord link copied!"
             self.StatusText.TextColor3 = Color3.fromRGB(50, 200, 50)
         else
-            self.StatusText.Text = "Exploit doesn't support clipboard copying."
+            self.StatusText.Text = "Executor doesn't support clipboard copying."
             self.StatusText.TextColor3 = Color3.fromRGB(200, 50, 50)
         end
     end)
@@ -287,11 +278,11 @@ function UI.new()
 end
 
 function UI:PlayStartupSequence()
-    TweenService:Create(self.LoadingFrame, TweenInfo.new(1), {BackgroundTransparency = 0}):Play()
-    TweenService:Create(self.LoadingFrame.UIStroke, TweenInfo.new(1), {Transparency = 0}):Play()
-    TweenService:Create(self.LoadingText, TweenInfo.new(1), {TextTransparency = 0}):Play()
+    TweenService:Create(self.LoadingFrame, TweenInfo.new(0.5), {BackgroundTransparency = 0}):Play()
+    TweenService:Create(self.LoadingFrame.UIStroke, TweenInfo.new(0.5), {Transparency = 0}):Play()
+    TweenService:Create(self.LoadingText, TweenInfo.new(0.5), {TextTransparency = 0}):Play()
     
-    task.wait(3.5)
+    task.wait(2)
     
     TweenService:Create(self.LoadingFrame, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
     TweenService:Create(self.LoadingFrame.UIStroke, TweenInfo.new(0.5), {Transparency = 1}):Play()
@@ -301,21 +292,25 @@ function UI:PlayStartupSequence()
     self.LoadingFrame:Destroy()
     
     self.KeyFrame.Visible = true
-    TweenService:Create(self.KeyFrame, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-        GroupTransparency = 0
+    TweenService:Create(self.KeyFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+        Size = UDim2.new(0, 360, 0, 240),
+        Position = UDim2.new(0.5, -180, 0.5, -120)
     }):Play()
 end
 
 function UI:TransitionToMain()
-    local closeKey = TweenService:Create(self.KeyFrame, TweenInfo.new(0.4), {GroupTransparency = 1})
+    local closeKey = TweenService:Create(self.KeyFrame, TweenInfo.new(0.3), {
+        Size = UDim2.new(0, 0, 0, 0),
+        Position = UDim2.new(0.5, 0, 0.5, 0)
+    })
     closeKey:Play()
     closeKey.Completed:Connect(function()
         self.KeyFrame:Destroy()
         Config.Settings.UIOpen = true
         self.MainFrame.Visible = true
-        TweenService:Create(self.MainFrame, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-            GroupTransparency = 0,
-            Size = UDim2.new(0, 450, 0, 530)
+        TweenService:Create(self.MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 450, 0, 530),
+            Position = UDim2.new(0.5, -225, 0.5, -265)
         }):Play()
     end)
 end
@@ -326,13 +321,13 @@ function UI:ToggleUI()
         if Config.Settings.UIOpen then
             self.MainFrame.Visible = true
             TweenService:Create(self.MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-                GroupTransparency = 0,
-                Size = UDim2.new(0, 450, 0, 530)
+                Size = UDim2.new(0, 450, 0, 530),
+                Position = UDim2.new(0.5, -225, 0.5, -265)
             }):Play()
         else
             local tweenOut = TweenService:Create(self.MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
-                GroupTransparency = 1,
-                Size = UDim2.new(0, 420, 0, 500)
+                Size = UDim2.new(0, 0, 0, 0),
+                Position = UDim2.new(0.5, 0, 0.5, 0)
             })
             tweenOut:Play()
             tweenOut.Completed:Connect(function()
