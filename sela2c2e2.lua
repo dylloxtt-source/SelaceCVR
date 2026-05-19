@@ -11,19 +11,19 @@ local player = Players.LocalPlayer
 local DiscordLink = "https://discord.gg/9eYR7ecMu"
 
 -----------------------------------------
--- [ ТВОИ НАСТРОЙКИ - ИСПРАВЛЕН ДЕФОЛТНЫЙ СТАТУС ]
+-- [ НАСТРОЙКИ ]
 -----------------------------------------
 local Config = {
     Gameplay = { JumpPower = 25.5, JumpEnabled = false, WalkSpeed = 16, SpeedEnabled = false, TiltPower = 4000, TiltEnabled = false },
     Misc = { PhysicsList = {"Bounce", "Athletic", "Wide Reach", "Sprinter", "Solid form", "All Rounder"}, TechList = {"Backrow Blitz", "Mind Reader", "Unbreakable", "Wiper", "Stance", "Fast Approach"}, CurrentPhysics = 2, CurrentTech = 6, AttrEnabled = false },
     Visuals = { TimeOfDay = 14, CustomTime = false, FullBright = false },
-    Settings = { ToggleKey = Enum.KeyCode.RightShift, UIOpen = false, IsVerified = false } -- Добавлена жесткая проверка авторизации
+    Settings = { ToggleKey = Enum.KeyCode.RightShift, UIOpen = false, IsVerified = false }
 }
 
 local OriginalLighting = { Ambient = Lighting.Ambient, GlobalShadows = Lighting.GlobalShadows, ClockTime = Lighting.ClockTime }
 
 -----------------------------------------
--- [ СИСТЕМА КЛЮЧЕЙ ]
+-- [ УМНАЯ СИСТЕМА КЛЮЧЕЙ ]
 -----------------------------------------
 local function VerifyKeyWithServer(key)
     local my_hwid = gethwid and gethwid() or game:GetService("RbxAnalyticsService"):GetClientId()
@@ -35,22 +35,36 @@ local function VerifyKeyWithServer(key)
     local currentTime = os.time()
 
     for line in string.gmatch(database_text, "[^\r\n]+") do
+        -- Удаляем случайные пробелы
+        line = string.gsub(line, " ", "") 
+        
         local split = string.split(line, ":")
-        if #split >= 3 then
-            local db_key, db_hwid, db_expiry = split[1], split[2], tonumber(split[3])
+        
+        -- Проверяем, что есть хотя бы КЛЮЧ и HWID
+        if #split >= 2 then
+            local db_key = split[1]
+            local db_hwid = split[2]
+            local db_expiry = tonumber(split[3]) or 0 
 
             if key == db_key then
-                if db_hwid ~= "NONE" and my_hwid ~= db_hwid then return false, "Wrong HWID!" end
-                if db_expiry ~= 0 and currentTime > db_expiry then return false, "Key Expired!" end
+                if db_hwid ~= "NONE" and my_hwid ~= db_hwid then 
+                    return false, "Wrong HWID!" 
+                end
+                
+                if db_expiry ~= 0 and currentTime > db_expiry then 
+                    return false, "Key Expired!" 
+                end
+                
                 return true, "Welcome!"
             end
         end
     end
+    
     return false, "Invalid Key!"
 end
 
 -----------------------------------------
--- [ UI С БОЛЬШИМИ ШРИФТАМИ ]
+-- [ UI БИБЛИОТЕКА ]
 -----------------------------------------
 local UI = {}
 UI.__index = UI
@@ -135,7 +149,7 @@ function UI.new()
         local success, msg = VerifyKeyWithServer(self.KeyInput.Text)
         if success then 
             self.EBtn.Text = "SUCCESS!"
-            Config.Settings.IsVerified = true -- Разрешаем бинд
+            Config.Settings.IsVerified = true
             task.wait(0.5)
             self:StartMain() 
         else 
@@ -150,7 +164,7 @@ function UI.new()
     self.MainFrame.Size = UDim2.new(0, 580, 0, 450)
     self.MainFrame.Position = UDim2.new(0.5, -290, 0.5, -225)
     self.MainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 17)
-    self.MainFrame.Visible = false -- Принудительно скрыто на старте
+    self.MainFrame.Visible = false
     self.MainFrame.GroupTransparency = 1
     Instance.new("UICorner", self.MainFrame).CornerRadius = UDim.new(0, 12)
     Instance.new("UIStroke", self.MainFrame).Color = Color3.fromRGB(138, 43, 226)
@@ -211,7 +225,7 @@ function UI:CreateTab(name)
     return page
 end
 
--- Вспомогательные элементы (БОЛЬШИЕ)
+-- Элементы UI
 local function AddToggle(parent, text, callback)
     local btn = Instance.new("TextButton", parent)
     btn.Size = UDim2.new(0.95, 0, 0, 50)
@@ -296,7 +310,7 @@ AddToggle(TabV, "CUSTOM TIME", function(s)
 end)
 
 -----------------------------------------
--- [ ФИЗИКА - АБСОЛЮТНО БЕЗ ИЗМЕНЕНИЙ ]
+-- [ ФИЗИКА ]
 -----------------------------------------
 local function SetupHumanoid(character)
     local humanoid = character:WaitForChild("Humanoid")
@@ -348,13 +362,12 @@ end)
 
 -- Toggle Menu
 UserInputService.InputBegan:Connect(function(input, g)
-    -- Проверка: если юзер не прошел верификацию ключа, кнопка закрыта наглухо
-    if not Config.Settings.IsVerified then return end
+    if not Config.Settings.IsVerified then return end -- Блокировка кнопки до ввода ключа
     
     if not g and input.KeyCode == Config.Settings.ToggleKey then
         Config.Settings.UIOpen = not Config.Settings.UIOpen
         HubUI.MainFrame.Visible = Config.Settings.UIOpen
-        HubUI.Blur.Size = Config.Settings.UIOpen and 15 or 0
+        TweenService:Create(HubUI.Blur, TweenInfo.new(0.3), {Size = Config.Settings.UIOpen and 15 or 0}):Play()
     end
 end)
 
