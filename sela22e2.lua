@@ -132,8 +132,10 @@ function UI.new()
         return btn
     end
 
-    self.HBtn = CreateBtn("GET HWID", UDim2.new(0.075, 0, 0.45, 0), Color3.fromRGB(45, 45, 55), function()
-        setclipboard(tostring(game:GetService("RbxAnalyticsService"):GetClientId()))
+   self.HBtn = CreateBtn("GET HWID", UDim2.new(0.075, 0, 0.45, 0), Color3.fromRGB(45, 45, 55), function()
+        -- Теперь берем правильный HWID, как в проверке ключей
+        local my_hwid = gethwid and gethwid() or game:GetService("RbxAnalyticsService"):GetClientId()
+        setclipboard(tostring(my_hwid))
         self.HBtn.Text = "COPIED!"
         task.wait(2) self.HBtn.Text = "GET HWID"
     end)
