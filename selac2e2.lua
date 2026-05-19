@@ -11,19 +11,19 @@ local player = Players.LocalPlayer
 local DiscordLink = "https://discord.gg/9eYR7ecMu"
 
 -----------------------------------------
--- [ ТВОИ НАСТРОЙКИ - НЕ ИЗМЕНЕНО ]
+-- [ ТВОИ НАСТРОЙКИ - ИСПРАВЛЕН ДЕФОЛТНЫЙ СТАТУС ]
 -----------------------------------------
 local Config = {
     Gameplay = { JumpPower = 25.5, JumpEnabled = false, WalkSpeed = 16, SpeedEnabled = false, TiltPower = 4000, TiltEnabled = false },
     Misc = { PhysicsList = {"Bounce", "Athletic", "Wide Reach", "Sprinter", "Solid form", "All Rounder"}, TechList = {"Backrow Blitz", "Mind Reader", "Unbreakable", "Wiper", "Stance", "Fast Approach"}, CurrentPhysics = 2, CurrentTech = 6, AttrEnabled = false },
     Visuals = { TimeOfDay = 14, CustomTime = false, FullBright = false },
-    Settings = { ToggleKey = Enum.KeyCode.RightShift, UIOpen = true }
+    Settings = { ToggleKey = Enum.KeyCode.RightShift, UIOpen = false, IsVerified = false } -- Добавлена жесткая проверка авторизации
 }
 
 local OriginalLighting = { Ambient = Lighting.Ambient, GlobalShadows = Lighting.GlobalShadows, ClockTime = Lighting.ClockTime }
 
 -----------------------------------------
--- [ НОВАЯ СИСТЕМА КЛЮЧЕЙ ]
+-- [ СИСТЕМА КЛЮЧЕЙ ]
 -----------------------------------------
 local function VerifyKeyWithServer(key)
     local my_hwid = gethwid and gethwid() or game:GetService("RbxAnalyticsService"):GetClientId()
@@ -50,7 +50,7 @@ local function VerifyKeyWithServer(key)
 end
 
 -----------------------------------------
--- [ НОВЫЙ UI С БОЛЬШИМИ ШРИФТАМИ ]
+-- [ UI С БОЛЬШИМИ ШРИФТАМИ ]
 -----------------------------------------
 local UI = {}
 UI.__index = UI
@@ -131,8 +131,18 @@ function UI.new()
     end)
 
     self.EBtn = CreateBtn("ENTER KEY", UDim2.new(0.075, 0, 0.75, 0), Color3.fromRGB(138, 43, 226), function()
+        self.EBtn.Text = "CHECKING..."
         local success, msg = VerifyKeyWithServer(self.KeyInput.Text)
-        if success then self:StartMain() else self.EBtn.Text = msg task.wait(2) self.EBtn.Text = "ENTER KEY" end
+        if success then 
+            self.EBtn.Text = "SUCCESS!"
+            Config.Settings.IsVerified = true -- Разрешаем бинд
+            task.wait(0.5)
+            self:StartMain() 
+        else 
+            self.EBtn.Text = msg 
+            task.wait(2) 
+            self.EBtn.Text = "ENTER KEY" 
+        end
     end)
 
     -- 2. MAIN FRAME
@@ -140,7 +150,7 @@ function UI.new()
     self.MainFrame.Size = UDim2.new(0, 580, 0, 450)
     self.MainFrame.Position = UDim2.new(0.5, -290, 0.5, -225)
     self.MainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 17)
-    self.MainFrame.Visible = false
+    self.MainFrame.Visible = false -- Принудительно скрыто на старте
     self.MainFrame.GroupTransparency = 1
     Instance.new("UICorner", self.MainFrame).CornerRadius = UDim.new(0, 12)
     Instance.new("UIStroke", self.MainFrame).Color = Color3.fromRGB(138, 43, 226)
@@ -168,6 +178,7 @@ function UI:StartMain()
     task.wait(0.5)
     self.LoginFrame.Visible = false
     self.MainFrame.Visible = true
+    Config.Settings.UIOpen = true
     TweenService:Create(self.MainFrame, TweenInfo.new(0.5), {GroupTransparency = 0}):Play()
     TweenService:Create(self.Blur, TweenInfo.new(0.5), {Size = 15}):Play()
 end
@@ -337,6 +348,9 @@ end)
 
 -- Toggle Menu
 UserInputService.InputBegan:Connect(function(input, g)
+    -- Проверка: если юзер не прошел верификацию ключа, кнопка закрыта наглухо
+    if not Config.Settings.IsVerified then return end
+    
     if not g and input.KeyCode == Config.Settings.ToggleKey then
         Config.Settings.UIOpen = not Config.Settings.UIOpen
         HubUI.MainFrame.Visible = Config.Settings.UIOpen
