@@ -1,0 +1,9 @@
+# Файлы мест, собранные Rojo или сохранённые из Studio
+*.rbxl
+*.rbxlx
+*.rbxm
+*.rbxmx
+*.lock
+
+# Генерируется плагинами редактора (luau-lsp)
+sourcemap.json
